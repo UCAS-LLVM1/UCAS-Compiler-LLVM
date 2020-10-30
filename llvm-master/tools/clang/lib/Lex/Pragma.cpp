@@ -342,6 +342,12 @@ void Preprocessor::HandleMicrosoft__pragma(Token &Tok) {
   return Lex(Tok);
 }
 
+/// HandlePragmaElementWise - Handle \#pragma elementWise.  OnceTok is the 'elementWise'.
+///
+void Preprocessor::HandlePragmElementWise(Token &ElementWiseTok) {
+    //TODO
+}
+
 /// HandlePragmaOnce - Handle \#pragma once.  OnceTok is the 'once'.
 ///
 void Preprocessor::HandlePragmaOnce(Token &OnceTok) {
