@@ -74,6 +74,9 @@ Parser::Parser(Preprocessor &pp, Sema &actions, bool skipFunctionBodies)
 
   PackHandler.reset(new PragmaPackHandler());
   PP.AddPragmaHandler(PackHandler.get());
+
+  PackHandler.reset(new PragmaElementWiseHandler());
+  PP.AddPragmaHandler(ElementWiseHandler.get());
     
   MSStructHandler.reset(new PragmaMSStructHandler());
   PP.AddPragmaHandler(MSStructHandler.get());
@@ -416,6 +419,8 @@ Parser::~Parser() {
     delete it->second;
 
   // Remove the pragma handlers we installed.
+  PP.RemovePragmaHandler(ElmentWiseHandler.get());
+  ElmentWiseHandler.reset();
   PP.RemovePragmaHandler(AlignHandler.get());
   AlignHandler.reset();
   PP.RemovePragmaHandler("GCC", GCCVisibilityHandler.get());
@@ -614,6 +619,9 @@ Parser::ParseExternalDeclaration(ParsedAttributesWithRange &attrs,
 
   Decl *SingleDecl = 0;
   switch (Tok.getKind()) {
+  case tok::annot_pragma_element_wise:
+    HandlePragmaElementWise();
+    return DeclGroupPtrTy();
   case tok::annot_pragma_vis:
     HandlePragmaVisibility();
     return DeclGroupPtrTy();

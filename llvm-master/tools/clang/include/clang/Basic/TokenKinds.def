@@ -613,7 +613,7 @@ ANNOTATION(pragma_pack)
 // Annotation for #pragma elementWise...
 // The lexer produces these so that they only take effect when the parser
 // handles them.
-ANNOTATION(pragma_elementWise)
+ANNOTATION(pragma_element_wise)
 
 // Annotation for #pragma clang __debug parser_crash...
 // The lexer produces these so that they only take effect when the parser
