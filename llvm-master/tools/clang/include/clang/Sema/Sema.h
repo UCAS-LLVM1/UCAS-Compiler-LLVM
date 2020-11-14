@@ -250,8 +250,10 @@ public:
   /// This is used as part of a hack to omit that class from ADL results.
   DeclarationName VAListTagName;
 
-  /// elementWise
-  int ElementWiseContext;
+  /// ElementWiseOn - 1 when \#pragma elementWise on
+  int ElementWiseOn;
+
+  /// ActOnPragmaAsCheck - Called on well formed \#pragma elementWise.
   void ActOnPragmaElementWise();
 
   /// PackContext - Manages the stack for \#pragma pack. An alignment
@@ -6575,10 +6577,6 @@ public:
   /// ActOnPragmaOptionsAlign - Called on well formed \#pragma options align.
   void ActOnPragmaOptionsAlign(PragmaOptionsAlignKind Kind,
                                SourceLocation PragmaLoc);
-
-  enum PragmaElementWiseKind {
-    PEWK_Default, // #pragma elementWise
-  };
 
   enum PragmaPackKind {
     PPK_Default, // #pragma pack([n])

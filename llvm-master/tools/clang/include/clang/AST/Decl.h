@@ -1396,6 +1396,9 @@ private:
   // FIXME: This can be packed into the bitfields in Decl.
   // NOTE: VC++ treats enums as signed, avoid using the StorageClass enum
   unsigned SClass : 2;
+  // IsElementWise
+  // Decl contains elementWise or not
+  bool IsElementWise : 1;
   bool IsInline : 1;
   bool IsInlineSpecified : 1;
   bool IsVirtualAsWritten : 1;
