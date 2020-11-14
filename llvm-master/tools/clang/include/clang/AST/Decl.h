@@ -1616,6 +1616,11 @@ public:
     return Body || IsLateTemplateParsed;
   }
 
+  /// setAsCheckRule -- Set As Rule for this specific
+  /// definition
+  void setElementWise()(bool ElementWiseOn);
+  bool isElementWise() const {return IsElementWise;}
+
   void setBody(Stmt *B);
   void setLazyBody(uint64_t Offset) { Body = Offset; }
 
