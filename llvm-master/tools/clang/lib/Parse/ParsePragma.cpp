@@ -250,6 +250,8 @@ void PragmaGCCVisibilityHandler::HandlePragma(Preprocessor &PP,
 void PragmaElementWiseHandler::HandlePragma(Preprocessor &PP, 
                                      PragmaIntroducerKind Introducer,
                                      Token &ElementWiseTok) {
+  
+  PP.CheckEndOfDirective("pragma elementWise");
   Token *Toks = 
     (Token*) PP.getPreprocessorAllocator().Allocate(
       sizeof(Token) * 1, llvm::alignOf<Token>());
@@ -257,7 +259,7 @@ void PragmaElementWiseHandler::HandlePragma(Preprocessor &PP,
   Toks[0].startToken();
   Toks[0].setKind(tok::annot_pragma_element_wise);
   Toks[0].setLocation(ElementWiseTok.getLocation());
-  Toks[0].setAnnotationValue(static_cast<void*>(Info));
+  Toks[0].setAnnotationValue(NULL);
   PP.EnterTokenStream(Toks, 1, /*DisableMacroExpansion=*/true,
                       /*OwnsTokens=*/false);
                                       
