@@ -37,29 +37,26 @@ public:
         if (const FunctionDecl *FD = dyn_cast<FunctionDecl>(DeclNode)) {
             std::string name = FD -> getNameAsString();
 //Place to modify
-            unsigned rule = 0;
-            //unsigned rule = FD -> getAsCheckRule();
-            funcNamesToAsCheckRule[FD->getNameAsString()] = rule;
-/*
-            if(rule != 0) {
-                funcNamesToAsCheckRule[FD->getNameAsString()] = FD -> getAsCheckRule();
+            bool IsElementWise = FD -> isElementWise();
+            if (IsElementWise) {
+                funcNamesToIsElementWise[name] = true;
             } else {
-				std::map<std::string, unsigned>::iterator it = funcNamesToAsCheckRule.find(name);
-				if(it == funcNamesToAsCheckRule.end())
-					funcNamesToAsCheckRule[FD->getNameAsString()] = FD -> getAsCheckRule();
+				std::map<std::string, unsigned>::iterator it = funcNamesToIsElementWise.find(name);
+				if(it == funcNamesToIsElementWise.end())
+					funcNamesToIsElementWise[FD->getNameAsString()] = FD -> isElementWise();
             }
 */
         }
         return RecursiveASTVisitor<TraverseFunctionDeclsVisitor>::TraverseDecl(DeclNode);
     }
-    void OutputAsCheckRules() {
-        for(std::map<std::string, unsigned>::iterator it = funcNamesToAsCheckRule.begin(); it != funcNamesToAsCheckRule.end(); ++it) {
+    void OutputIsElementWise() {
+        for(std::map<std::string, unsigned>::iterator it = funcNamesToIsElementWise.begin(); it != funcNamesToIsElementWise.end(); ++it) {
             llvm::outs() << it -> first << ": " << it -> second << "\n";
         }
     }
 private:
     ASTContext *Context;
-    std::map<std::string, unsigned> funcNamesToAsCheckRule;
+    std::map<std::string, unsigned> funcNamesToIsElementWise;
 };
 
 class TraverseFunctionDeclsConsumer : public ASTConsumer {
@@ -69,7 +66,7 @@ public:
 
     virtual void HandleTranslationUnit(ASTContext &Context) {
         Visitor.TraverseDecl(Context.getTranslationUnitDecl());
-        Visitor.OutputAsCheckRules();
+        Visitor.OutputIsElementWise();
     }
 private:
     TraverseFunctionDeclsVisitor Visitor;

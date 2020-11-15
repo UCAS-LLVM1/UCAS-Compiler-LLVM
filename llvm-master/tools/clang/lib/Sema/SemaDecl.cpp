@@ -8881,6 +8881,14 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body,
   if (FD) {
     FD->setBody(Body);
 
+    // Handle elementWise
+    if (ElementWiseOn == 1) {
+      FD->setElementWise(true);
+      ElementWiseOn = 0;
+    } else {
+       FD->setElementWise(false);
+    }
+
     if (getLangOpts().CPlusPlus1y && !FD->isInvalidDecl() &&
         !FD->isDependentContext()) {
       if (FD->getResultType()->isUndeducedType()) {

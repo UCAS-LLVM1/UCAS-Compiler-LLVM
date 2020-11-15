@@ -2033,6 +2033,11 @@ Stmt *FunctionDecl::getBody(const FunctionDecl *&Definition) const {
   return 0;
 }
 
+void FunctionDecl::setElementWise(Bool ElementWiseOn){
+  assert(doesThisDeclarationHaveABody());
+  IsElementWise = ElementWiseOn;
+}
+
 void FunctionDecl::setBody(Stmt *B) {
   Body = B;
   if (B)

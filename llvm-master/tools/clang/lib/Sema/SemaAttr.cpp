@@ -181,6 +181,10 @@ void Sema::ActOnPragmaOptionsAlign(PragmaOptionsAlignKind Kind,
   }
 }
 
+  void Sema::ActOnPragmaElementWise(){
+    ElementWiseOn = 1;
+  }
+
 void Sema::ActOnPragmaPack(PragmaPackKind Kind, IdentifierInfo *Name,
                            Expr *alignment, SourceLocation PragmaLoc,
                            SourceLocation LParenLoc, SourceLocation RParenLoc) {

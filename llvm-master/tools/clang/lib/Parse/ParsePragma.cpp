@@ -39,6 +39,12 @@ void Parser::HandlePragmaVisibility() {
   Actions.ActOnPragmaVisibility(VisType, VisLoc);
 }
 
+void Parser::HandlePragmaElementWise() {
+  assert(Tok.is(tok::annot_pragma_element_wise));
+  SourceLocation PragmaLoc = ConsumeToken();
+  Actions.ActOnPragmaElementWise();
+}
+
 struct PragmaPackInfo {
   Sema::PragmaPackKind Kind;
   IdentifierInfo *Name;
@@ -238,6 +244,26 @@ void PragmaGCCVisibilityHandler::HandlePragma(Preprocessor &PP,
                           const_cast<void*>(static_cast<const void*>(VisType)));
   PP.EnterTokenStream(Toks, 1, /*DisableMacroExpansion=*/true,
                       /*OwnsTokens=*/true);
+}
+
+// #pragma elementWise
+void PragmaElementWiseHandler::HandlePragma(Preprocessor &PP, 
+                                     PragmaIntroducerKind Introducer,
+                                     Token &ElementWiseTok) {
+  
+  PP.CheckEndOfDirective("pragma elementWise");
+  Token *Toks = 
+    (Token*) PP.getPreprocessorAllocator().Allocate(
+      sizeof(Token) * 1, llvm::alignOf<Token>());
+  new (Toks) Token();  //maybe should be deleted
+  Toks[0].startToken();
+  Toks[0].setKind(tok::annot_pragma_element_wise);
+  Toks[0].setLocation(ElementWiseTok.getLocation());
+  Toks[0].setAnnotationValue(NULL);
+  PP.EnterTokenStream(Toks, 1, /*DisableMacroExpansion=*/true,
+                      /*OwnsTokens=*/false);
+                                      
+
 }
 
 // #pragma pack(...) comes in the following delicious flavors:

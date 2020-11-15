@@ -250,6 +250,12 @@ public:
   /// This is used as part of a hack to omit that class from ADL results.
   DeclarationName VAListTagName;
 
+  /// ElementWiseOn - 1 when \#pragma elementWise on
+  int ElementWiseOn;
+
+  /// ActOnPragmaAsCheck - Called on well formed \#pragma elementWise.
+  void ActOnPragmaElementWise();
+
   /// PackContext - Manages the stack for \#pragma pack. An alignment
   /// of 0 indicates default alignment.
   void *PackContext; // Really a "PragmaPackStack*"
