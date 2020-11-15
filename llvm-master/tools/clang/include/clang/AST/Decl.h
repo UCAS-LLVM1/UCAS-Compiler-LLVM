@@ -1618,7 +1618,7 @@ public:
 
   /// setAsCheckRule -- Set As Rule for this specific
   /// definition
-  void setElementWise()(bool ElementWiseOn);
+  void setElementWise(bool ElementWiseOn);
   bool isElementWise() const {return IsElementWise;}
 
   void setBody(Stmt *B);

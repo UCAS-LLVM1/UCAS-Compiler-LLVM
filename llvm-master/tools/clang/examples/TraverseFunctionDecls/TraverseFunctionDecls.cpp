@@ -45,7 +45,6 @@ public:
 				if(it == funcNamesToIsElementWise.end())
 					funcNamesToIsElementWise[FD->getNameAsString()] = FD -> isElementWise();
             }
-*/
         }
         return RecursiveASTVisitor<TraverseFunctionDeclsVisitor>::TraverseDecl(DeclNode);
     }

@@ -2033,7 +2033,7 @@ Stmt *FunctionDecl::getBody(const FunctionDecl *&Definition) const {
   return 0;
 }
 
-void FunctionDecl::setElementWise(Bool ElementWiseOn){
+void FunctionDecl::setElementWise(bool ElementWiseOn){
   assert(doesThisDeclarationHaveABody());
   IsElementWise = ElementWiseOn;
 }

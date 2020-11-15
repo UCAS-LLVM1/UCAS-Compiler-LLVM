@@ -419,8 +419,8 @@ Parser::~Parser() {
     delete it->second;
 
   // Remove the pragma handlers we installed.
-  PP.RemovePragmaHandler(ElmentWiseHandler.get());
-  ElmentWiseHandler.reset();
+  PP.RemovePragmaHandler(ElementWiseHandler.get());
+  ElementWiseHandler.reset();
   PP.RemovePragmaHandler(AlignHandler.get());
   AlignHandler.reset();
   PP.RemovePragmaHandler("GCC", GCCVisibilityHandler.get());
