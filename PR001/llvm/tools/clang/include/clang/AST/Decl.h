@@ -1616,7 +1616,7 @@ public:
     return Body || IsLateTemplateParsed;
   }
 
-  /// setAsCheckRule -- Set As Rule for this specific
+  /// setElementWise -- Set elementWise for this specific
   /// definition
   void setElementWise(bool ElementWiseOn);
   bool isElementWise() const {return IsElementWise;}
