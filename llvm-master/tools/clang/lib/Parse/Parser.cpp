@@ -75,7 +75,7 @@ Parser::Parser(Preprocessor &pp, Sema &actions, bool skipFunctionBodies)
   PackHandler.reset(new PragmaPackHandler());
   PP.AddPragmaHandler(PackHandler.get());
 
-  PackHandler.reset(new PragmaElementWiseHandler());
+  ElementWiseHandler.reset(new PragmaElementWiseHandler());
   PP.AddPragmaHandler(ElementWiseHandler.get());
     
   MSStructHandler.reset(new PragmaMSStructHandler());
