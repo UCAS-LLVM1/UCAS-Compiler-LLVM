@@ -253,7 +253,7 @@ public:
   /// ElementWiseOn - 1 when \#pragma elementWise on
   int ElementWiseOn;
 
-  /// ActOnPragmaAsCheck - Called on well formed \#pragma elementWise.
+  /// ActOnPragmaElementWise - Called on well formed \#pragma elementWise.
   void ActOnPragmaElementWise();
 
   /// PackContext - Manages the stack for \#pragma pack. An alignment
