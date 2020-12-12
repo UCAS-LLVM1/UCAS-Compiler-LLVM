@@ -6299,6 +6299,28 @@ Sema::CheckSingleAssignmentConstraints(QualType LHSType, ExprResult &RHS,
     return Compatible;
   }
 
+
+  if (this->ElementWiseOn) {
+      if (ConstantArrayType::classof(LHS.get()-> getType().getTypePtr()) &&
+          ConstantArrayType::classof(RHS.get() -> getType().getTypePtr())){ 	  
+        // extend elementWise operations
+        ConstantArrayType * RHSArrayType = dyn_cast<ConstantArrayType>(RHS.get() -> getType());
+        QualType RHSElementType = RHSArrayType->getElementType().getUnqualifiedType();
+        LHS.get()->getType() = Context.getCanonicalType(LHS.get()->getType()).getUnqualifiedType();
+        RHS.get()->getType() = Context.getCanonicalType(RHS.get()->getType()).getUnqualifiedType();
+
+        if (LHS.get()->getType() == RHS.get()->getType() &&
+          RHSElementType -> isIntType()) {
+          return Compatible;
+        } else {
+          return Incompatible;
+        }
+  
+      } 
+
+  }
+
+
   // This check seems unnatural, however it is necessary to ensure the proper
   // conversion of functions/arrays. If the conversion were done for all
   // DeclExpr's (created by ActOnIdExpression), it would mess up the unary
@@ -6470,6 +6492,32 @@ QualType Sema::CheckMultiplyDivideOperands(ExprResult &LHS, ExprResult &RHS,
   if (LHS.get()->getType()->isVectorType() ||
       RHS.get()->getType()->isVectorType())
     return CheckVectorOperands(LHS, RHS, Loc, IsCompAssign);
+  
+  if (this->ElementWiseOn) {
+    Expr *LHS.get() = LHS.get(), *RHS.get() = RHS.get();
+    const Type *LHSType = LHS.get()->getType().getTypePtr();
+    const Type *RHSType = RHS.get()->getType().getTypePtr();
+    if (ConstantArrayType::classof(LHSType) && ConstantArrayType::classof(RHSType)) {
+      const ConstantArrayType *LHSArrayType = dyn_cast<ConstantArrayType>(LHSType);
+      const ConstantArrayType *RHSArrayType = dyn_cast<ConstantArrayType>(RHSType);
+      llvm::APInt LHSArrayLen = LHSArrayType->getSize();
+      llvm::APInt RHSArrayLen = RHSArrayType->getSize();
+      QualType LHSElementType = LHSArrayType->getElementType().getUnqualifiedType();
+      QualType RHSElementType = RHSArrayType->getElementType().getUnqualifiedType();
+      if (LHSArrayLen == RHSArrayLen && LHSElementType == RHSElementType && LHSElementType->isIntType()) {
+        Qualifiers qual;
+        if (!LHS.get()->isRValue()) {
+          // Cast to RValue
+          LHS = ImplicitCastExpr::Create(Context, Context.getUnqualifiedArrayType(LHS.get()->getType().getUnqualifiedType(), qual), CK_LValueToRValue, const_cast<Expr *>(LHS.get()), 0, VK_RValue);
+        }
+        if (!RHS.get()->isRValue()) {
+          // Cast to RValue
+          RHS = ImplicitCastExpr::Create(Context, Context.getUnqualifiedArrayType(RHS.get()->getType().getUnqualifiedType(), qual), CK_LValueToRValue, const_cast<Expr *>(RHS.get()), 0, VK_RValue);
+        }
+        return LHS.get()->getType();
+      }
+    }
+  }
 
   QualType compType = UsualArithmeticConversions(LHS, RHS, IsCompAssign);
   if (LHS.isInvalid() || RHS.isInvalid())
@@ -6713,6 +6761,32 @@ QualType Sema::CheckAdditionOperands( // C99 6.5.6
     QualType compType = CheckVectorOperands(LHS, RHS, Loc, CompLHSTy);
     if (CompLHSTy) *CompLHSTy = compType;
     return compType;
+  }
+
+  if (this->ElementWiseOn) {
+    Expr *LHS.get() = LHS.get(), *RHS.get() = RHS.get();
+    const Type *LHSType = LHS.get()->getType().getTypePtr();
+    const Type *RHSType = RHS.get()->getType().getTypePtr();
+    if (ConstantArrayType::classof(LHSType) && ConstantArrayType::classof(RHSType)) {
+      const ConstantArrayType *LHSArrayType = dyn_cast<ConstantArrayType>(LHSType);
+      const ConstantArrayType *RHSArrayType = dyn_cast<ConstantArrayType>(RHSType);
+      llvm::APInt LHSArrayLen = LHSArrayType->getSize();
+      llvm::APInt RHSArrayLen = RHSArrayType->getSize();
+      QualType LHSElementType = LHSArrayType->getElementType().getUnqualifiedType();
+      QualType RHSElementType = RHSArrayType->getElementType().getUnqualifiedType();
+      if (LHSArrayLen == RHSArrayLen && LHSElementType == RHSElementType && LHSElementType->isIntType()) {
+        Qualifiers qual;
+        if (!LHS.get()->isRValue()) {
+          // Cast to RValue
+          LHS = ImplicitCastExpr::Create(Context, Context.getUnqualifiedArrayType(LHS.get()->getType().getUnqualifiedType(), qual), CK_LValueToRValue, const_cast<Expr *>(LHS.get()), 0, VK_RValue);
+        }
+        if (!RHS.get()->isRValue()) {
+          // Cast to RValue
+          RHS = ImplicitCastExpr::Create(Context, Context.getUnqualifiedArrayType(RHS.get()->getType().getUnqualifiedType(), qual), CK_LValueToRValue, const_cast<Expr *>(RHS.get()), 0, VK_RValue);
+        }
+        return LHS.get()->getType();
+      }
+    }
   }
 
   QualType compType = UsualArithmeticConversions(LHS, RHS, CompLHSTy);
@@ -7932,6 +8006,7 @@ static bool CheckForModifiableLvalue(Expr *E, SourceLocation Loc, Sema &S) {
     break;
   case Expr::MLV_ArrayType:
   case Expr::MLV_ArrayTemporary:
+    if (S.ElementWiseContext) return false;
     Diag = diag::err_typecheck_array_not_modifiable_lvalue;
     NeedType = true;
     break;

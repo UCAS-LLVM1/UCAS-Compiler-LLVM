@@ -1485,6 +1485,7 @@ public:
 
   /// isIntegerType() does *not* include complex integers (a GCC extension).
   /// isComplexIntegerType() can be used to test for complex integers.
+  bool isIntType() const;
   bool isIntegerType() const;     // C99 6.2.5p17 (int, char, bool, enum)
   bool isEnumeralType() const;
   bool isBooleanType() const;
@@ -5003,6 +5004,13 @@ inline bool Type::isIntegerType() const {
     return IsEnumDeclComplete(ET->getDecl()) &&
       !IsEnumDeclScoped(ET->getDecl());
   }
+  return false;
+}
+
+// is Int type
+inline bool Type::isIntType() const {
+  if (const BuiltinType *BT = dyn_cast<BuiltinType>(CanonicalType))
+    return BT->getKind() == BuiltinType::Int;
   return false;
 }
 
