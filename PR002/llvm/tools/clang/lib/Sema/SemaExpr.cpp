@@ -6301,15 +6301,16 @@ Sema::CheckSingleAssignmentConstraints(QualType LHSType, ExprResult &RHS,
 
 
   if (this->ElementWiseOn) {
-      if (ConstantArrayType::classof(LHS.get()-> getType().getTypePtr()) &&
-          ConstantArrayType::classof(RHS.get() -> getType().getTypePtr())){ 	  
+      QualType RHSType = RHS.get() -> getType();
+      if (ConstantArrayType::classof(LHSType.getTypePtr()) &&
+          ConstantArrayType::classof(RHSType.getTypePtr())){ 	  
         // extend elementWise operations
-        ConstantArrayType * RHSArrayType = dyn_cast<ConstantArrayType>(RHS.get() -> getType());
+        const ConstantArrayType * RHSArrayType = dyn_cast<ConstantArrayType>(RHSType);
         QualType RHSElementType = RHSArrayType->getElementType().getUnqualifiedType();
-        LHS.get()->getType() = Context.getCanonicalType(LHS.get()->getType()).getUnqualifiedType();
-        RHS.get()->getType() = Context.getCanonicalType(RHS.get()->getType()).getUnqualifiedType();
+        LHSType = Context.getCanonicalType(LHSType).getUnqualifiedType();
+        RHSType = Context.getCanonicalType(RHSType).getUnqualifiedType();
 
-        if (LHS.get()->getType() == RHS.get()->getType() &&
+        if (LHSType == RHSType &&
           RHSElementType -> isIntType()) {
           return Compatible;
         } else {
@@ -6494,7 +6495,6 @@ QualType Sema::CheckMultiplyDivideOperands(ExprResult &LHS, ExprResult &RHS,
     return CheckVectorOperands(LHS, RHS, Loc, IsCompAssign);
   
   if (this->ElementWiseOn) {
-    Expr *LHS.get() = LHS.get(), *RHS.get() = RHS.get();
     const Type *LHSType = LHS.get()->getType().getTypePtr();
     const Type *RHSType = RHS.get()->getType().getTypePtr();
     if (ConstantArrayType::classof(LHSType) && ConstantArrayType::classof(RHSType)) {
@@ -6764,7 +6764,6 @@ QualType Sema::CheckAdditionOperands( // C99 6.5.6
   }
 
   if (this->ElementWiseOn) {
-    Expr *LHS.get() = LHS.get(), *RHS.get() = RHS.get();
     const Type *LHSType = LHS.get()->getType().getTypePtr();
     const Type *RHSType = RHS.get()->getType().getTypePtr();
     if (ConstantArrayType::classof(LHSType) && ConstantArrayType::classof(RHSType)) {
@@ -8006,7 +8005,7 @@ static bool CheckForModifiableLvalue(Expr *E, SourceLocation Loc, Sema &S) {
     break;
   case Expr::MLV_ArrayType:
   case Expr::MLV_ArrayTemporary:
-    if (S.ElementWiseContext) return false;
+    if (S.ElementWiseOn) return false;
     Diag = diag::err_typecheck_array_not_modifiable_lvalue;
     NeedType = true;
     break;
