@@ -1740,6 +1740,8 @@ public:
   /// EmitIgnoredExpr - Emit an expression in a context which ignores the result.
   void EmitIgnoredExpr(const Expr *E);
 
+  llvm::Value *EmitElementWiseExpr(const Expr *E);
+
   /// EmitAnyExpr - Emit code to compute the specified expression which can have
   /// any type.  The result is returned as an RValue struct.  If this is an
   /// aggregate expression, the aggloc/agglocvolatile arguments indicate where

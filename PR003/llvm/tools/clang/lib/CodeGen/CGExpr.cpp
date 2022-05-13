@@ -107,6 +107,137 @@ void CodeGenFunction::EmitIgnoredExpr(const Expr *E) {
   EmitLValue(E);
 }
 
+llvm::Value *CodeGenFunction::EmitElementWiseExpr(const Expr *E) {
+  if (BinaryOperator::classof(E)) {
+    const BinaryOperator* bo = dyn_cast<BinaryOperator>(E);
+    Expr* LHS = bo->getLHS();
+    Expr* RHS = bo->getRHS();
+    llvm::Value *LHSBase, *RHSBase;
+    if (bo->getOpcode() == BO_Assign) {
+      const DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(LHS);
+      const ValueDecl* decl = declRef->getDecl();
+      LHSBase = LocalDeclMap.lookup((Decl*)decl);
+    } else {
+      LHSBase = EmitElementWiseExpr(LHS);
+    }
+    RHSBase = EmitElementWiseExpr(RHS);
+
+    // Alloc temp val: i
+    QualType Ty = getContext().UnsignedIntTy;
+    llvm::Type *LTy = ConvertTypeForMem(Ty);
+    llvm::AllocaInst *Alloc = CreateTempAlloca(LTy);
+    Alloc->setName("compiler.for.i");
+    Alloc->setAlignment(4);
+
+    // alloc temp val
+    QualType TyR = E->getType().getUnqualifiedType();
+    llvm::Type *LTyR = ConvertTypeForMem(TyR);
+    llvm::AllocaInst *tempC;
+
+    // init i，use Store_i
+    // 0: use LLVM's API -> LLVM expr
+    llvm::StoreInst *Store_i = Builder.CreateStore(llvm::ConstantInt::get(LTy, llvm::APInt(32, 0)), (llvm::Value*)Alloc, false);
+    Store_i->setAlignment(4);
+
+    // create basic block
+    llvm::BasicBlock *ConditionBlock = createBasicBlock("compiler.for.condition");
+    llvm::BasicBlock *BodyBlock = createBasicBlock("compiler.for.body");
+    llvm::BasicBlock *IncBlock = createBasicBlock("compiler.for.inc");
+    llvm::BasicBlock *EndBlock = createBasicBlock("compiler.for.end");
+
+    // gen condition block
+    EmitBlock(ConditionBlock);
+
+    // load compiler.i as offset
+    // LLVM returns Value，StoreInst，AllocInst
+    // LoadInst is Value
+    llvm::LoadInst *idx = Builder.CreateLoad((llvm::Value*)Alloc, "");
+    idx->setAlignment(4);
+    
+    // type Promote to Int
+    llvm::Value *idxPromoted = Builder.CreateIntCast(idx, IntPtrTy, false, "idxprom");
+    
+    const ConstantArrayType *CATy = dyn_cast<ConstantArrayType>(TyR);
+    llvm::Value *ConditionCmpRHS = llvm::ConstantInt::get(IntPtrTy, CATy->getSize());
+
+    // create condition branch
+    llvm::Value *ConditionCmp = Builder.CreateICmpULT(idxPromoted, ConditionCmpRHS, "compiler.for.condition.cmp");
+    Builder.CreateCondBr(ConditionCmp, BodyBlock, EndBlock);
+
+    // gen condition block
+    EmitBlock(BodyBlock);
+
+    LValue LVR, LVL;
+    LVR = MakeAddrLValue(RHSBase, TyR);
+    LVL = MakeAddrLValue(LHSBase, TyR);
+
+    llvm::Value *arrayPtrR = LVR.getAddress();
+    llvm::Value *arrayPtrL = LVL.getAddress();
+    
+    llvm::Value *Zero = llvm::ConstantInt::get(Int32Ty, 0);
+    llvm::Value *Args[] = { Zero, idxPromoted };
+    
+    // GEP： Get Element Pointer
+    llvm::Value *addrL = Builder.CreateInBoundsGEP(arrayPtrL, Args, "arrayidx");
+    llvm::Value *addrR = Builder.CreateInBoundsGEP(arrayPtrR, Args, "arrayidx");
+
+    if(bo->getOpcode() == BO_Add || bo->getOpcode() == BO_Mul){
+      llvm::LoadInst *valueA = Builder.CreateLoad(addrL, "");
+      llvm::LoadInst *valueB = Builder.CreateLoad(addrR, "");
+      valueA->setAlignment(4);
+      valueB->setAlignment(4);
+      tempC = CreateTempAlloca(LTyR);
+      tempC->setAlignment(4);
+      //C = A + B
+      llvm::Value *baseC = (llvm::Value *)tempC;
+      llvm::Value *arrayPtrC = MakeAddrLValue(baseC, TyR).getAddress();
+      llvm::Value *addrC = Builder.CreateInBoundsGEP(arrayPtrC, Args, "arrayidx");
+      llvm::Value *op_result;
+      if (bo->getOpcode() == BO_Add) {
+        // A:L B:R
+        op_result = Builder.CreateAdd((llvm::Value *)valueA, (llvm::Value *)valueB, "add");
+      } else if (bo->getOpcode() == BO_Mul) {
+        // A:L B:R
+        op_result = Builder.CreateMul((llvm::Value *)valueA, (llvm::Value *)valueB, "mul");
+      }
+      llvm::StoreInst *valueC = Builder.CreateStore(op_result, (llvm::Value *)addrC, false);
+      valueC->setAlignment(4);
+    } else if (bo->getOpcode() == BO_Assign) {
+      llvm::LoadInst *load = Builder.CreateLoad(addrR, "");
+      load->setAlignment(4);
+      llvm::StoreInst *valueC = Builder.CreateStore((llvm::Value*)load, addrL, false);
+      valueC->setAlignment(4);
+    } 
+
+    // i++ & branch
+    EmitBlock(IncBlock);
+    
+    llvm::Value *One = llvm::ConstantInt::get(Int32Ty, 1);
+    llvm::LoadInst *IncI = Builder.CreateLoad((llvm::Value*)Alloc, "");
+    IncI->setAlignment(4);
+    llvm::Value* IncAdd = Builder.CreateAdd((llvm::Value*)IncI, One, "");
+    llvm::StoreInst *StoreI = Builder.CreateStore(IncAdd, (llvm::Value*)Alloc, false);
+    StoreI->setAlignment(4);
+    Builder.CreateBr(ConditionBlock);
+
+    EmitBlock(EndBlock);
+
+    if (bo->getOpcode() == BO_Assign) {
+        return LHSBase;
+    } else {
+        return (llvm::Value*)tempC;
+    }
+
+  } else {
+      if (ImplicitCastExpr::classof(E)) {
+        const ImplicitCastExpr* castE = dyn_cast<ImplicitCastExpr>(E);
+        E = castE->getSubExpr();
+      }
+      const DeclRefExpr *updateE = dyn_cast<DeclRefExpr>(E);
+      return LocalDeclMap.lookup((Decl*)updateE->getDecl());
+  }
+}
+
 /// EmitAnyExpr - Emit code to compute the specified expression which
 /// can have any type.  The result is returned as an RValue struct.
 /// If this is an aggregate expression, AggSlot indicates where the
@@ -114,6 +245,10 @@ void CodeGenFunction::EmitIgnoredExpr(const Expr *E) {
 RValue CodeGenFunction::EmitAnyExpr(const Expr *E,
                                     AggValueSlot aggSlot,
                                     bool ignoreResult) {
+  if (E->getType()->getTypeClass() == Type::ConstantArray) {
+    return RValue::get(EmitElementWiseExpr(E));
+  }
+  
   switch (getEvaluationKind(E->getType())) {
   case TEK_Scalar:
     return RValue::get(EmitScalarExpr(E, ignoreResult));
